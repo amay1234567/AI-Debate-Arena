@@ -9,53 +9,53 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function generateArguments() {
-    if (!topic.trim()) { setMessage("Please enter a topic."); return; }
+  const showMessage = (msg) => {
+    setMessage(msg);
+    setTimeout(() => setMessage(""), 3000);
+  };
 
-    setMessage("");
+  const generateArguments = async () => {
+    const trimmedTopic = topic.trim();
+    if (!trimmedTopic) return showMessage("Please enter a topic.");
+
     setLoading(true);
-    setProArgument(""); setConArgument(""); setProScore(0); setConScore(0);
+    setProArgument("");
+    setConArgument("");
+    setProScore(0);
+    setConScore(0);
 
     try {
-      const [proRes, conRes] = await Promise.all([
-        fetch("/api/debate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: `Write a persuasive argument FOR the topic: '${topic}'.` })
-        }),
-        fetch("/api/debate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: `Write a persuasive argument AGAINST the topic: '${topic}'.` })
-        })
-      ]);
+      const proRes = fetch("/api/debate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: `Write a persuasive argument FOR the topic: '${trimmedTopic}'.` }),
+      }).then((r) => r.json());
 
-      const proData = await proRes.json();
-      const conData = await conRes.json();
+      const conRes = fetch("/api/debate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: `Write a persuasive argument AGAINST the topic: '${trimmedTopic}'.` }),
+      }).then((r) => r.json());
 
-      if (!proRes.ok) throw new Error(proData.error || "Failed to fetch pro argument");
-      if (!conRes.ok) throw new Error(conData.error || "Failed to fetch con argument");
+      const [proData, conData] = await Promise.all([proRes, conRes]);
+
+      if (proData.error) throw new Error(proData.error);
+      if (conData.error) throw new Error(conData.error);
 
       setProArgument(proData.text);
       setConArgument(conData.text);
     } catch (err) {
-      setMessage(`Error generating arguments: ${err.message}`);
+      showMessage(`Error generating arguments: ${err.message}`);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4 bg-gray-100">
       <div className="bg-white rounded-xl shadow-2xl p-8 max-w-4xl w-full">
         <h1 className="text-4xl font-extrabold text-center mb-2 text-gray-900">AI Debate Arena</h1>
         <p className="text-center text-gray-600 mb-8">Enter a topic and let the AI debate begin!</p>
-
-        {message && (
-          <div className="text-center bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mb-4">
-            {message}
-          </div>
-        )}
 
         <div className="flex flex-col md:flex-row items-stretch gap-4 mb-8">
           <input
@@ -75,8 +75,15 @@ export default function Home() {
           </button>
         </div>
 
-        {proArgument && conArgument && (
+        {message && (
+          <div className="text-center bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl mb-4">
+            {message}
+          </div>
+        )}
+
+        {(proArgument || conArgument) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Pro Argument */}
             <div className="argument-card bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-inner flex flex-col h-full">
               <h2 className="text-2xl font-bold text-gray-800 mb-4">Argument For</h2>
               <div className="text-gray-700 flex-grow text-justify">{proArgument}</div>
@@ -91,6 +98,7 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Con Argument */}
             <div className="argument-card bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-inner flex flex-col h-full">
               <h2 className="text-2xl font-bold text-gray-800 mb-4">Argument Against</h2>
               <div className="text-gray-700 flex-grow text-justify">{conArgument}</div>
