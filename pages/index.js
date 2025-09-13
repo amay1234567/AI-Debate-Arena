@@ -25,19 +25,19 @@ export default function Home() {
     setConScore(0);
 
     try {
-      const proRes = fetch("/api/debate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: `Write a persuasive argument FOR the topic: '${trimmedTopic}'.` }),
-      }).then((r) => r.json());
+      const [proData, conData] = await Promise.all([
+        fetch("/api/debate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: `Write a persuasive argument FOR the topic: '${trimmedTopic}'.` }),
+        }).then((r) => r.json()),
 
-      const conRes = fetch("/api/debate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: `Write a persuasive argument AGAINST the topic: '${trimmedTopic}'.` }),
-      }).then((r) => r.json());
-
-      const [proData, conData] = await Promise.all([proRes, conRes]);
+        fetch("/api/debate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: `Write a persuasive argument AGAINST the topic: '${trimmedTopic}'.` }),
+        }).then((r) => r.json()),
+      ]);
 
       if (proData.error) throw new Error(proData.error);
       if (conData.error) throw new Error(conData.error);
@@ -67,6 +67,7 @@ export default function Home() {
             className="flex-grow p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200"
           />
           <button
+            type="button"
             onClick={generateArguments}
             disabled={loading}
             className="w-full md:w-auto px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200"
@@ -84,11 +85,12 @@ export default function Home() {
         {(proArgument || conArgument) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Pro Argument */}
-            <div className="argument-card bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-inner flex flex-col h-full">
+            <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-inner flex flex-col h-full">
               <h2 className="text-2xl font-bold text-gray-800 mb-4">Argument For</h2>
               <div className="text-gray-700 flex-grow text-justify">{proArgument}</div>
               <div className="flex items-center justify-between mt-4">
                 <button
+                  type="button"
                   onClick={() => setProScore(proScore + 1)}
                   className="px-4 py-2 bg-green-500 text-white font-semibold rounded-full shadow-lg hover:bg-green-600 transition-colors duration-200"
                 >
@@ -99,11 +101,12 @@ export default function Home() {
             </div>
 
             {/* Con Argument */}
-            <div className="argument-card bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-inner flex flex-col h-full">
+            <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-inner flex flex-col h-full">
               <h2 className="text-2xl font-bold text-gray-800 mb-4">Argument Against</h2>
               <div className="text-gray-700 flex-grow text-justify">{conArgument}</div>
               <div className="flex items-center justify-between mt-4">
                 <button
+                  type="button"
                   onClick={() => setConScore(conScore + 1)}
                   className="px-4 py-2 bg-red-500 text-white font-semibold rounded-full shadow-lg hover:bg-red-600 transition-colors duration-200"
                 >
